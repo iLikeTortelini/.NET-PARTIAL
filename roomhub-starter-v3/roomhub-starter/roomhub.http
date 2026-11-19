@@ -1,7 +1,7 @@
 ### Variables
 @baseUrl = http://localhost:5090
 
-### 1. Create room
+### 1. Create room (capacity <= 10 -> max 4h booking)
 # @name createRoom
 POST {{baseUrl}}/api/rooms
 Content-Type: application/json
@@ -49,7 +49,54 @@ Content-Type: application/json
   "attendees": 4
 }
 
-### 7. Cancel booking
+### 7. Touching interval booking (R7 - expected: 201, also 2nd booking for ana on 2030-01-10)
+POST {{baseUrl}}/api/rooms/{{roomId}}/bookings
+Content-Type: application/json
+
+{
+  "bookedBy": "ana",
+  "startUtc": "2030-01-10T12:00:00Z",
+  "endUtc": "2030-01-10T14:00:00Z",
+  "attendees": 4
+}
+
+### 8. R9: 3rd active booking on same UTC day for ana (expected: 409)
+POST {{baseUrl}}/api/rooms/{{roomId}}/bookings
+Content-Type: application/json
+
+{
+  "bookedBy": "ana",
+  "startUtc": "2030-01-10T15:00:00Z",
+  "endUtc": "2030-01-10T16:00:00Z",
+  "attendees": 4
+}
+
+### 9. R10: Create large room (capacity > 10 -> max 2h booking)
+# @name createLargeRoom
+POST {{baseUrl}}/api/rooms
+Content-Type: application/json
+
+{
+  "name": "Conference Hall",
+  "capacity": 20
+}
+
+###
+@largeRoomId = {{createLargeRoom.response.body.$.id}}
+
+### 10. R10: Booking > 2h in large room (expected: 400)
+POST {{baseUrl}}/api/rooms/{{largeRoomId}}/bookings
+Content-Type: application/json
+
+{
+  "bookedBy": "cristi",
+  "startUtc": "2030-01-11T10:00:00Z",
+  "endUtc": "2030-01-11T13:00:00Z",
+  "attendees": 12
+}
+
+### 11. Cancel booking (R8 & R11 - expected: 204 if > 60 min in future)
 POST {{baseUrl}}/api/bookings/{{bookingId}}/cancel
 
-### 8. Add your own requests here for the rules in ASSIGNMENT.md
+### 12. Cancel already cancelled booking (R8 - expected: 409)
+POST {{baseUrl}}/api/bookings/{{bookingId}}/cancel

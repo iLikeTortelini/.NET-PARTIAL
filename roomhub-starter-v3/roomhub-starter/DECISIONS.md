@@ -32,4 +32,4 @@ AI-ul a propus ca in GetRoomByIdEndpoint si GetBookingByIdEndpoint sa injectam d
 ## 6. If you had 30 more minutes
 What would you improve and what risk did you leave in the project?
 
-_(your answer here)_
+As imbunatati verificarea de suprapunere a rezervarilor (R7) mutand filtrarea dupa Status == BookingStatus.Active si intersectia de intervale direct in interogarea din BookingRepository, ca sa nu incarc in memorie toate rezervarile istorice ale unei sali.

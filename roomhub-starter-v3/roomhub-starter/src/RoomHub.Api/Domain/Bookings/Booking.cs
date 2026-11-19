@@ -5,7 +5,10 @@ namespace RoomHub.Api.Domain.Bookings;
 
 public sealed class Booking
 {
-    private static readonly TimeSpan MaxDuration = TimeSpan.FromHours(4);
+    private static readonly TimeSpan MaxStandardDuration = TimeSpan.FromHours(4);
+    private static readonly TimeSpan MaxLargeRoomDuration = TimeSpan.FromHours(2);
+    private static readonly TimeSpan MinCancelLeadTime = TimeSpan.FromMinutes(60);
+    public const int MaxActiveBookingsPerDay = 2;
 
     private Booking()
     {
@@ -57,10 +60,11 @@ public sealed class Booking
                 Error.Validation("BookingInPast", "A booking cannot start in the past."));
         }
 
-        if (endUtc - startUtc > MaxDuration)
+        var maxDuration = room.Capacity > 10 ? MaxLargeRoomDuration : MaxStandardDuration;
+        if (endUtc - startUtc > maxDuration)
         {
             return Result<Booking>.Failure(
-                Error.Validation("BookingTooLong", "The maximum duration of a booking is 4 hours."));
+                Error.Validation("BookingTooLong", $"The maximum duration of a booking is {maxDuration.TotalHours} hours."));
         }
 
         return Result<Booking>.Success(new Booking
@@ -85,12 +89,23 @@ public sealed class Booking
         return other.StartUtc < EndUtc && StartUtc < other.EndUtc;
     }
 
-    public Result<Unit> Cancel()
+    public static bool CanParticipantBookOnDay(int existingActiveBookingsOnDay)
+    {
+        return existingActiveBookingsOnDay < MaxActiveBookingsPerDay;
+    }
+
+    public Result<Unit> Cancel(DateTime nowUtc)
     {
         if (Status == BookingStatus.Cancelled)
         {
             return Result<Unit>.Failure(
                 Error.Conflict("BookingAlreadyCancelled", "The booking is already cancelled."));
+        }
+
+        if (StartUtc - nowUtc < MinCancelLeadTime)
+        {
+            return Result<Unit>.Failure(
+                Error.Conflict("CancelTooLate", "A booking can be cancelled only if it starts at least 60 minutes from now."));
         }
 
         Status = BookingStatus.Cancelled;

@@ -52,6 +52,17 @@ public sealed class CreateBookingHandler(
             }
         }
 
+        var activeOnDay = await bookingRepository.CountActiveForParticipantOnDayAsync(
+            newBooking.BookedBy,
+            newBooking.StartUtc.Date,
+            cancellationToken);
+
+        if (!Booking.CanParticipantBookOnDay(activeOnDay))
+        {
+            return Result<Booking>.Failure(
+                Error.Conflict("DailyLimitExceeded", "A participant cannot have more than 2 active bookings per day."));
+        }
+
         await bookingRepository.AddAsync(newBooking, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
