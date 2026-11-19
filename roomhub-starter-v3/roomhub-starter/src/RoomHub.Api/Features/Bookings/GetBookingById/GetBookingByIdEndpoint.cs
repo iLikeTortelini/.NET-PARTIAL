@@ -1,4 +1,6 @@
-using RoomHub.Api.Services;
+using RoomHub.Api.Common.CQRS;
+using RoomHub.Api.Domain.Bookings;
+using RoomHub.Api.Domain.Common;
 
 namespace RoomHub.Api.Features.Bookings.GetBookingById;
 
@@ -16,9 +18,18 @@ public static class GetBookingByIdEndpoint
     public static void Map(RouteGroupBuilder group) => group.MapGet("/{id:guid}", Handle)
         .WithName("GetBookingById");
 
-    private static IResult Handle(Guid id, BookingService service)
+    private static async Task<IResult> Handle(
+        Guid id,
+        IQueryHandler<GetBookingByIdQuery, Result<Booking>> handler,
+        CancellationToken cancellationToken)
     {
-        var b = service.Get(id);
+        var result = await handler.HandleAsync(new GetBookingByIdQuery(id), cancellationToken);
+        if (result.IsFailure)
+        {
+            return ProblemResults.ToProblem(result.Error);
+        }
+
+        var b = result.Value;
         return Results.Ok(new BookingResponse(
             b.Id, b.RoomId, b.BookedBy, b.StartUtc, b.EndUtc, b.Attendees, b.Status.ToString()));
     }

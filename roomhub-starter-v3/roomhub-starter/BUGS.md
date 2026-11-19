@@ -5,4 +5,4 @@ Fill it in yourself, in your own words. There is no required number: what counts
 
 | Which rule from ASSIGNMENT.md is violated (R1–R8) | Where the problem was in the starter (file, approximate line) | How you discovered it (test, reading, AI) | What you changed |
 |---|---|---|---|
-| _(fill in)_ | _(fill in)_ | _(fill in)_ | _(fill in)_ |
+|R7 | in Services/BookingService.cs (linia 28), conditia era existing.StartUtc <= endUtc && startUtc <= existing.EndUtc. Din cauza lui <=, doua rezervari se atingeau la capat (una se termina la 12:00, alta incepe la 12:00) | AI | Am schimbat operatorul în < strict |
